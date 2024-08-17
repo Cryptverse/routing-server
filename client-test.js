@@ -1,6 +1,6 @@
 import { stringToU8, u8ToString } from "./lib/util.js";
 
-const socket = new WebSocket("ws://localhost:80/ws/lobby?gameName=Bun%20Test&isModded=no&isPrivate=no&gamemode=maze&biome=2&secretKey=29e4b5febd6c2f326dee890e1f71991ea4c7850bfa09a14a");
+const socket = new WebSocket("ws://localhost:80/ws/lobby?gameName=Bun%20Test&isModded=no&isPrivate=no&gamemode=maze&biome=2&secretKey=29e4b5febd6c2f326dee890e1f71991ea4c7850bfa09a14a&directConnect=::1,Development Server,-4");
 socket.binaryType = "arraybuffer";
 socket.onopen = () => {
     console.log("Open");
