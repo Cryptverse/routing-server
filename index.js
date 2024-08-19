@@ -2,6 +2,7 @@ import { stringToU8, u16ToU8, u8ToString, u8ToU16 } from "./lib/util.js";
 import Lobby, { validate } from "./lib/Lobby.js";
 import logToWebhook from "./lib/webhookLogger.js";
 import { getUUIDData, standardGetUUID } from "./lib/uuid.js";
+import { analytics, AnalyticsEntry } from "./lib/analytics.js";
 
 if (Bun.env.ENV_DONE !== "true") {
     const trustedKey = Array.from(crypto.getRandomValues(new Uint8Array(24))).map(e => e.toString(16).padStart(2, "0")).join("");
@@ -118,13 +119,16 @@ function respondServerfetch(request) {
                 });
             }
         };
+        case "/analytics/get":
+            return Response.json(analytics);
         case "/ws/lobby": {
             if (server.upgrade(request, {
                 data: {
                     address: requestIP.address,
                     internalID: connectionID++,
                     type: SOCKET_TYPE_LOBBY,
-                    url: url
+                    url: url,
+                    analytics: null
                 }
             })) {
                 return undefined;
@@ -138,7 +142,8 @@ function respondServerfetch(request) {
                     address: requestIP.address,
                     internalID: connectionID++,
                     type: SOCKET_TYPE_CLIENT,
-                    url: url
+                    url: url,
+                    analytics: null
                 }
             })) {
                 return undefined;
@@ -167,11 +172,26 @@ const server = Bun.serve({
         open(socket) {
             socket.binaryType = "arraybuffer";
 
+
+            /** @type {URLSearchParams} */
+            const search = socket.data.url.searchParams;
+
+            if (!search.has("analytics")) {
+                socket.terminate();
+                return;
+            }
+
+            try {
+                socket.data.analytics = AnalyticsEntry.fromBase64(decodeURIComponent(search.get("analytics")));
+            } catch (e) {
+                console.log(e);
+                socket.terminate();
+                return;
+            }
+
             switch (socket.data.type) {
                 case SOCKET_TYPE_LOBBY:
                     try {
-                        /** @type {URLSearchParams} */
-                        const search = socket.data.url.searchParams;
                         const lobby = new Lobby(socket, search.get("gameName"));
                         lobby.define(
                             search.get("isModded"),
@@ -189,6 +209,13 @@ const server = Bun.serve({
                             }
                         }
 
+                        socket.data.analytics.define("lobby", {
+                            modded: lobby.isModded,
+                            private: lobby.isPrivate,
+                            gamemode: lobby.gamemode,
+                            biome: lobby.biome
+                        });
+
                         lobby.begin();
                         socket.data.lobby = lobby;
                     } catch (e) {
@@ -203,9 +230,6 @@ const server = Bun.serve({
                     }
 
                     try {
-                        /** @type {URLSearchParams} */
-                        const search = socket.data.url.searchParams;
-
                         const uuid = search.get("uuid");
                         /** @type {string} */
                         const partyURL = search.get("partyURL");
@@ -222,6 +246,11 @@ const server = Bun.serve({
                         const lobby = Lobby.lobbies[partyURL];
                         lobby.addClient(socket, uuid, search.get("clientKey") || "");
                         socket.data.lobby = lobby;
+
+                        socket.data.analytics.define("client", {
+                            gamemode: lobby.gamemode,
+                            biome: lobby.biome
+                        });
                     } catch (e) {
                         socket.terminate();
                     }
@@ -233,6 +262,10 @@ const server = Bun.serve({
         },
 
         close(socket) {
+            if (socket.data.analytics) {
+                socket.data.analytics.end();
+            }
+
             switch (socket.data.type) {
                 case SOCKET_TYPE_LOBBY: {
                     if (socket.data.lobby) {
