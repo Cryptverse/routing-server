@@ -346,8 +346,8 @@ const server = Bun.serve({
 
     port: Bun.env.PORT,
     tls: Bun.env.TLS_DIRECTORY !== "false" ? {
-        key: await Bun.read(`${Bun.env.TLS_DIRECTORY}/privkey.pem`),
-        cert: await Bun.read(`${Bun.env.TLS_DIRECTORY}/cert.pem`)
+        key: Bun.file(`${Bun.env.TLS_DIRECTORY}/privkey.pem`),
+        cert: Bun.file(`${Bun.env.TLS_DIRECTORY}/cert.pem`)
     } : undefined
 });
 
