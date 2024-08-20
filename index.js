@@ -172,7 +172,6 @@ const server = Bun.serve({
         open(socket) {
             socket.binaryType = "arraybuffer";
 
-
             /** @type {URLSearchParams} */
             const search = socket.data.url.searchParams;
 
@@ -205,7 +204,7 @@ const server = Bun.serve({
                             const directConnect = validate.directConnect(search.get("directConnect"));
 
                             if (directConnect !== null) {
-                                lobby.setDirectConnect(directConnect.address, directConnect.modtd, directConnect.timeZone);
+                                lobby.setDirectConnect(directConnect.address, directConnect.timeZone);
                             }
                         }
 
@@ -219,6 +218,7 @@ const server = Bun.serve({
                         lobby.begin();
                         socket.data.lobby = lobby;
                     } catch (e) {
+                        console.log(e);
                         socket.send(new Uint8Array([255, 0, ...stringToU8(e.message)]));
                         socket.terminate();
                     }
@@ -236,7 +236,6 @@ const server = Bun.serve({
                         const uuidData = getUUIDData(uuid);
 
                         if (!uuidData || uuidData.expiresAt < new Date() || !Lobby.lobbies[partyURL]) {
-                            console.log(uuid, uuidData, partyURL);
                             socket.terminate();
                             return;
                         }
