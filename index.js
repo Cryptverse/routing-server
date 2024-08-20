@@ -204,7 +204,14 @@ const server = Bun.serve({
                             const directConnect = validate.directConnect(search.get("directConnect"));
 
                             if (directConnect !== null) {
-                                lobby.setDirectConnect(directConnect.address, directConnect.timeZone);
+                                try {
+                                    lobby.setDirectConnect(directConnect.address, directConnect.timeZone);
+                                } catch (e) {
+                                    console.log(e);
+                                    socket.send(new Uint8Array([255, 0, ...stringToU8(e.message)]));
+                                    socket.terminate();
+                                    return;
+                                }
                             }
                         }
 
@@ -317,6 +324,15 @@ const server = Bun.serve({
                                 lobby.sendMagic();
                             } catch (e) {
                                 socket.send(new Uint8Array([255, 0, ...stringToU8("Invalid JSON resources")]));
+                            }
+                            break;
+                        case 0x03:
+                            if (lobby.trusted && lobby.directConnect) {
+                                const analytics = u8ToString(message, 1);
+                                const totalTime = u8ToString(message, 1 + analytics.length + 1);
+
+                                const entry = AnalyticsEntry.fromBase64(analytics);
+                                entry.end(totalTime);
                             }
                             break;
                     }
