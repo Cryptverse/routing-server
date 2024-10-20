@@ -1,4 +1,4 @@
-import { stringToU8, u16ToU8, u8ToString, u8ToU16 } from "./lib/util.js";
+import { stringToU8, TRUSTED, u16ToU8, u8ToString, u8ToU16 } from "./lib/util.js";
 import Lobby, { validate } from "./lib/Lobby.js";
 import logToWebhook from "./lib/webhookLogger.js";
 import { getUUIDData, standardGetUUID } from "./lib/uuid.js";
@@ -130,6 +130,56 @@ function respondServerfetch(request) {
                 });
             }
         };
+        case "/uuid/check": {
+            try {
+                const searchParams = url.searchParams;
+                const uuid = searchParams.get("uuid");
+
+                if (!uuid || uuid.length !== 36) {
+                    return Response.json({
+                        ok: false,
+                        error: "Invalid UUID"
+                    });
+                }
+
+                const trustedKey = searchParams.get("trustedKey");
+
+                if (!trustedKey) {
+                    return Response.json({
+                        ok: false,
+                        error: "Invalid trusted key"
+                    });
+                }
+
+                let valid = false;
+                for (const key in TRUSTED) {
+                    if (TRUSTED[key] === trustedKey) {
+                        valid = true;
+                        break;
+                    }
+                }
+
+                if (!valid) {
+                    return Response.json({
+                        ok: false,
+                        error: "Invalid trusted key"
+                    });
+                }
+
+                const data = getUUIDData(uuid);
+                return Response.json({
+                    ok: true,
+                    isValid: data !== null,
+                    ...data
+                });
+
+            } catch (e) {
+                return Response.json({
+                    ok: false,
+                    error: "Internal server error"
+                });
+            }
+        }
         case "/analytics/get":
             return Response.json(analytics);
         case "/ws/lobby": {
