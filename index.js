@@ -302,7 +302,7 @@ const server = Bun.serve({
                     }
                     break;
                 case SOCKET_TYPE_CLIENT:
-                    if (IP_TABLES[socket.data.address] > 2) {
+                    if (IP_TABLES[socket.data.address] > 1) {
                         console.log("Rate limit exceeded");
                         return socket.terminate();
                     }
