@@ -398,17 +398,19 @@ const server = Bun.serve({
                             }
                             break;
                         case 0x03:
-                            if (lobby.trusted && lobby.directConnect) {
-                                const analytics = u8ToString(message, 1);
-                                const totalTime = u8ToString(message, 1 + analytics.length + 1);
-
-                                const entry = AnalyticsEntry.fromBase64(analytics);
-                                entry.define("client", {
-                                    gamemode: lobby.gamemode,
-                                    biome: lobby.biome
-                                });
-                                entry.end(totalTime);
-                            }
+                            try {
+                                if (lobby.trusted && lobby.directConnect) {
+                                    const analytics = u8ToString(message, 1);
+                                    const totalTime = u8ToString(message, 1 + analytics.length + 1);
+    
+                                    const entry = AnalyticsEntry.fromBase64(analytics);
+                                    entry.define("client", {
+                                        gamemode: lobby.gamemode,
+                                        biome: lobby.biome
+                                    });
+                                    entry.end(totalTime);
+                                }
+                            } catch (e) {}
                             break;
                     }
                 } break;
