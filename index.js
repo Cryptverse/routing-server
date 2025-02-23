@@ -392,6 +392,12 @@ const server = Bun.serve({
                         case 0x02:
                             try {
                                 lobby.resources = JSON.parse(u8ToString(message, 1));
+
+                                if (lobby.resources[0] > 24) {
+                                    socket.send(new Uint8Array([255, 0, ...stringToU8("You have too many rarities! Quantity must be less than or equal to 24.")]));
+                                    return;
+                                }
+
                                 lobby.sendMagic();
                             } catch (e) {
                                 socket.send(new Uint8Array([255, 0, ...stringToU8("Invalid JSON resources")]));
