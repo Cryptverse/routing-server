@@ -51,8 +51,7 @@ function respondServerfetch(request) {
 
     const url = new URL(request.url);
     switch (url.pathname) {
-        case "/lobby/list":
-            return Response.json(Lobby.toJSONResponse());
+        case "/lobby/list": return Response.json(Lobby.toJSONResponse());
         case "/lobby/get": {
             const id = url.searchParams.get("partyURL");
 
@@ -178,8 +177,7 @@ function respondServerfetch(request) {
                     ok: false,
                     error: "Internal server error"
                 });
-            }
-        }
+            }}
         case "/analytics/get":
             return Response.json(analytics);
         case "/ws/lobby": {
@@ -339,7 +337,9 @@ const server = Bun.serve({
             }
         },
 
-        close(socket) {
+        close(socket, code, reason) {
+            console.log(`WS CLOSED: code=${code}, type=${socket.data.type}, reason=${reason}`);
+            if (code === 1006) console.log("BUN IDLE TIMEOUT — FIX: idleTimeout: 0");
             if (socket.data.analytics) {
                 socket.data.analytics.end();
             }
@@ -362,7 +362,7 @@ const server = Bun.serve({
                                     delete IP_TABLES[socket.data.address];
                                 }
                             }
-                        } catch (e) { }
+                        } catch (e) { console.error; }
                     }
                     break;
             }
@@ -377,9 +377,7 @@ const server = Bun.serve({
                 case SOCKET_TYPE_LOBBY: {
                     const message = new Uint8Array(data);
 
-                    if (message.length === 0 || socket.data.lobby === undefined) {
-                        return;
-                    }
+                    if (message.length === 0 || socket.data.lobby === undefined) return;
 
                     /** @type {Lobby} */
                     const lobby = socket.data.lobby;
