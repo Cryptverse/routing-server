@@ -83,6 +83,7 @@ function respondServerfetch(request) {
             return Response.json(lobby.resources);
         };
         case "/uuid/get": {
+            console.log("UUID REQUEST → existing =", url.searchParams.get("existing"), "IP =", requestIP);
             try {
                 const ip = requestIP.address;
 
@@ -125,7 +126,7 @@ function respondServerfetch(request) {
             } catch (e) {
                 return Response.json({
                     ok: false,
-                    error: "Internal server error"
+                    error: `Internal server error: ${e}`
                 });
             }
         };
