@@ -83,7 +83,6 @@ function respondServerfetch(request) {
             return Response.json(lobby.resources);
         };
         case "/uuid/get": {
-            console.log("UUID REQUEST → existing =", url.searchParams.get("existing"), "IP =", requestIP);
             try {
                 const ip = requestIP.address;
 
